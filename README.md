@@ -1,4 +1,5 @@
 # Matrix
 A C++ matrix class for deep learning
 
-# Including assignment
+# What's its functions includeed?
+...1
