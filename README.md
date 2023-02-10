@@ -2,11 +2,13 @@
 A C++ matrix class for deep learning
 
 # What its functions
-1. Matrix Assignment
-2. Matrix Cauculate
-3. Matrix Transpose
+    1. Matrix Assignment
+    2. Matrix Cauculate
+    3. Matrix Transpose
 
 # How to use it
+## First of All
+    #include 'Matrix.h'
 ## For  Call Variables Calling
     A(i, j); // Means its element's value in row i, col j
 ## For Creating & Assignment
