@@ -7,7 +7,5 @@ A C++ matrix class for deep learning
 3. Matrix Transpose
 
 # How to use it
-(''')
-Matrix A = MatrixAssignment(row, col, num) // Crate a [row*col] size matrix with each element values num
-
-(''')
+  Matrix A = MatrixAssignment(row, col, num) // Crate a [row*col] size matrix with each element values num
+  
