@@ -118,8 +118,8 @@ Matrix MatrixAssignment(int x, int y, std::initializer_list<double> val) {
     
     int cnt = -1;
     for (auto itm : val) {
-        int i = ++cnt / x;
-        int j = cnt % x;
+        int i = ++cnt % x;
+        int j = cnt / x;
         Mat(i, j) = itm;
     }
     return Mat;
@@ -200,7 +200,7 @@ Matrix operator / (const Matrix &Mat_x, const Matrix &Mat_y) {
 
 Matrix exp(const Matrix &x) {
     Matrix Mat = MatrixAssignment(x.row, x.col);
-    Iter(x) Mat(i, j) = exp(x(i, j));
+    Iter(Mat)   Mat(i, j) = exp(x(i, j));
     return Mat;
 }
 
@@ -212,8 +212,36 @@ Matrix tanh_D(const Matrix &x)  {
     return 1 - (tanh(x) % tanh(x));
 }
 
+Matrix log(const Matrix &x) {
+    Matrix Mat = MatrixAssignment(x.row, x.col);
+    Iter(Mat)   Mat(i, j) = log(x(i, j));
+    return Mat;
+}
+
+Matrix log10(const Matrix &x) {
+    Matrix Mat = MatrixAssignment(x.row, x.col);
+    Iter(Mat)   Mat(i, j) = log10(x(i, j));
+    return Mat;
+}
+
 Matrix logistic(const Matrix &x) {
     return 1 / (1 + exp(-x));
+}
+
+Matrix logistic_D(const Matrix &x) {
+    return logistic(x) % (1-logistic(x));
+}
+
+Matrix relu(const Matrix &x) {
+    Matrix Mat = MatrixAssignment(x.row, x.col, 0);
+    Iter(Mat) if(x(i, j) > 0) Mat(i, j) = x(i, j);
+    return Mat;
+}
+
+Matrix relu_D(const Matrix &x) {
+    Matrix tmp = x;
+    Iter(tmp) tmp(i, j) = tmp(i, j) > 0 ? x(i, j) : 0;
+    return tmp;
 }
 
 /*--------------------------------------------------------*/
@@ -240,9 +268,8 @@ double ave(const Matrix &Mat) {
 double var(const Matrix &Mat) {
     double num = 0;
     double a = ave(Mat);
-    double s = size(Mat);
-    Iter(Mat)   num += (Mat(i, j) - a) / s;
-    return num;
+    Iter(Mat)   num += (Mat(i, j) - a) * (Mat(i, j) - a);
+    return num / size(Mat);
 }
 
 Matrix T(const Matrix &Mat) {
@@ -251,6 +278,62 @@ Matrix T(const Matrix &Mat) {
     return Mat_T;
 }
 
+double min_row(const Matrix &Mat, const int n) {
+    double tmp = Mat(n, 0);
+    for(int i = 0;i < Mat.col;i++)  tmp = std::min(tmp, Mat(n, i));
+    return tmp;
+}
+
+double max_col(const Matrix &Mat, const int n) {
+    double tmp = Mat(0, n);
+    for(int i = 0;i < Mat.row;i++)  tmp = std::max(tmp, Mat(i, n));
+    return tmp;
+}
+
+double min_col(const Matrix &Mat, const int n) {
+    double tmp = Mat(0, n);
+    for(int i = 0;i < Mat.row;i++)  tmp = std::min(tmp, Mat(i, n));
+    return tmp;
+}
+
+double max_row(const Matrix &Mat, const int n) {
+    double tmp = Mat(n, 0);
+    for(int i = 0;i < Mat.col;i++)  tmp = std::max(tmp, Mat(n, i));
+    return tmp;
+}
+
+
+Matrix Normalize_ZScore(const Matrix &Mat_ori) {
+    Matrix Mat_nor = MatrixAssignment(Mat_ori.row, Mat_ori.col);
+    double mean = ave(Mat_ori);
+    double variance = var(Mat_ori);
+    Iter(Mat_nor) Mat_nor(i, j) = (Mat_ori(i, j) - mean) / variance;
+    return Mat_nor;
+}
+
+Matrix Restore_ZScore(const Matrix &Mat_sample, const Matrix &Mat_ori) {
+    Matrix Mat_nor = MatrixAssignment(Mat_ori.row, Mat_ori.col);
+    double mean = ave(Mat_sample);
+    double variance = var(Mat_sample);
+    Iter(Mat_nor) Mat_nor(i, j) = Mat_ori(i, j) * variance + mean;
+    return Mat_nor;
+}
+
+Matrix Normalize_MinMax(const Matrix &Mat_ori) {
+    double Min, Max; Min = Max = Mat_ori(0, 0);
+    Iter(Mat_ori) {
+        Min = std::min(Min, Mat_ori(i, j));
+        Max = std::max(Max, Mat_ori(i, j));
+    }
+    return 1 / (Max - Min) % (Mat_ori - Min);
+}
+
+Matrix Restore_MinMax(const Matrix &Mat_sample, const Matrix &Mat_ori) {
+    double Min, Max; Min = Max = Mat_sample(0, 0);
+    Iter(Mat_sample) {
+        Min = std::min(Min, Mat_sample(i, j));
+        Max = std::max(Max, Mat_sample(i, j));
+    }
+    return (Max - Min) % Mat_ori + Min;
+}
 /*--------------------------------------------------------*/
-
-
