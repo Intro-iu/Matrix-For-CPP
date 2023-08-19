@@ -12,7 +12,8 @@ double RandomTheta(double l, double r){
 }
 
 struct Matrix {
-    int row, col;
+    int row;
+    int col;
     double * a;
 
     Matrix() {
@@ -51,11 +52,11 @@ struct Matrix {
     }
 
     double& operator () (const int &x, const int &y) {
-        return a[x*col+y];
+        return a[y*row+x];
     }
 
     double operator () (const int &x, const int &y) const {
-        return a[x*col+y];
+        return a[y*row+x];
     }
 };
 
@@ -69,7 +70,7 @@ void disp(const Matrix &Mat) {
     std::cout << std::endl;
 }
 
-Matrix MatrixAssignment(int x, int y, double l, double r) {
+Matrix MatrixAssignment(const int &x, const int &y, double l, double r) {
     Matrix Mat;
     Mat.row = x; Mat.col = y;
     Mat.a = new double[x * y];
@@ -80,18 +81,15 @@ Matrix MatrixAssignment(int x, int y, double l, double r) {
     return Mat;
 }
 
-Matrix MatrixAssignment(int x, int y, double val = 0) {
-    Matrix Mat;
-    Mat.row = x; Mat.col = y;
-    Mat.a = new double[x * y];
-
-    for (int i = 0;i < x;i++)   for (int j = 0;j < y;j++)
-        Mat(i, j) = val;
+Matrix MatrixAssignment(const int &x, const int &y, const double &val = 0) {
+    Matrix Mat; Mat.row = x; Mat.col = y;
+    Mat.a = new double[Mat.row * Mat.col];
+    for (int n = 0;n < Mat.row*Mat.col;n++) Mat.a[n] = val;
 
     return Mat;
 }
 
-Matrix MatrixAssignment(int x, int y, const Matrix &TargetMatrix) {
+Matrix MatrixAssignment(const int &x, const int &y, const Matrix &TargetMatrix) {
     Matrix Mat;
     Mat.row = x; Mat.col = y;
     Mat.a = new double[x * y];
@@ -276,6 +274,43 @@ Matrix T(const Matrix &Mat) {
     Matrix Mat_T = MatrixAssignment(Mat.col, Mat.row);
     Iter(Mat_T) Mat_T(i, j) = Mat(j, i);
     return Mat_T;
+}
+
+Matrix V(const Matrix &Mat) {
+    if (Mat.col == 1)   return Mat;
+    Matrix Mat_V = MatrixAssignment(Mat.row * Mat.col, 1);
+    for (int i = 0;i < Mat_V.row*Mat_V.col;i++) {
+        Mat_V.a[i] = Mat.a[i];
+    }
+    return Mat_V;
+}
+
+Matrix VecLink(const std::initializer_list<Matrix> &Mat) {
+    int row = 0;
+    for (auto Vec : Mat) {
+        if (Vec.col != 1) return 0;
+        row += Vec.row;
+    }
+    Matrix Mat_output = MatrixAssignment(row, 1);
+    int cnt1 = -1;  int cnt2 = -1;
+    for (auto Vec : Mat) {
+        Iter (Vec) Mat_output.a[++cnt1] = Vec.a[++cnt2];
+        cnt2 = -1;
+    }
+    return Mat_output;
+}
+
+Matrix MatMerge(const std::initializer_list<Matrix> &Mat) {
+    int row = Mat.begin()->row; int col = 0;
+    for (auto Mat_tmp : Mat) col += Mat_tmp.col;
+    Matrix Mat_output = MatrixAssignment(row, col);
+    int cnt1 = -1;  int cnt2 = -1;
+    for (auto Vec : Mat) {
+        if (Vec.row != row) return 0;
+        Iter (Vec) Mat_output.a[++cnt1] = Vec.a[++cnt2];
+        cnt2 = -1;
+    } 
+    return Mat_output;    
 }
 
 double min_row(const Matrix &Mat, const int n) {
