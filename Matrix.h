@@ -12,8 +12,7 @@ double RandomTheta(double l, double r){
 }
 
 struct Matrix {
-    int row;
-    int col;
+    int row, col;
     double * a;
 
     Matrix() {
@@ -52,11 +51,11 @@ struct Matrix {
     }
 
     double& operator () (const int &x, const int &y) {
-        return a[y*row+x];
+        return a[x*col+y];
     }
 
     double operator () (const int &x, const int &y) const {
-        return a[y*row+x];
+        return a[x*col+y];
     }
 };
 
@@ -70,7 +69,7 @@ void disp(const Matrix &Mat) {
     std::cout << std::endl;
 }
 
-Matrix MatrixAssignment(const int &x, const int &y, double l, double r) {
+Matrix MatrixAssignment(int x, int y, double l, double r) {
     Matrix Mat;
     Mat.row = x; Mat.col = y;
     Mat.a = new double[x * y];
@@ -81,15 +80,18 @@ Matrix MatrixAssignment(const int &x, const int &y, double l, double r) {
     return Mat;
 }
 
-Matrix MatrixAssignment(const int &x, const int &y, const double &val = 0) {
-    Matrix Mat; Mat.row = x; Mat.col = y;
-    Mat.a = new double[Mat.row * Mat.col];
-    for (int n = 0;n < Mat.row*Mat.col;n++) Mat.a[n] = val;
+Matrix MatrixAssignment(int x, int y, double val = 0) {
+    Matrix Mat;
+    Mat.row = x; Mat.col = y;
+    Mat.a = new double[x * y];
+
+    for (int i = 0;i < x;i++)   for (int j = 0;j < y;j++)
+        Mat(i, j) = val;
 
     return Mat;
 }
 
-Matrix MatrixAssignment(const int &x, const int &y, const Matrix &TargetMatrix) {
+Matrix MatrixAssignment(int x, int y, const Matrix &TargetMatrix) {
     Matrix Mat;
     Mat.row = x; Mat.col = y;
     Mat.a = new double[x * y];
@@ -222,6 +224,18 @@ Matrix log10(const Matrix &x) {
     return Mat;
 }
 
+Matrix pow(const Matrix &x, const double &y = 2) {
+    Matrix Mat = x;
+    Iter(Mat)   Mat(i, j) = pow(Mat(i, j), y);
+    return Mat;
+}
+
+Matrix sqrt(const Matrix &x) {
+    Matrix Mat = x;
+    Iter(Mat)   Mat(i, j) = sqrt(Mat(i, j));
+    return Mat;
+}
+
 Matrix logistic(const Matrix &x) {
     return 1 / (1 + exp(-x));
 }
@@ -231,7 +245,7 @@ Matrix logistic_D(const Matrix &x) {
 }
 
 Matrix relu(const Matrix &x) {
-    Matrix Mat = MatrixAssignment(x.row, x.col, 0);
+    Matrix Mat = MatrixAssignment(x.row, x.col);
     Iter(Mat) if(x(i, j) > 0) Mat(i, j) = x(i, j);
     return Mat;
 }
@@ -276,43 +290,6 @@ Matrix T(const Matrix &Mat) {
     return Mat_T;
 }
 
-Matrix V(const Matrix &Mat) {
-    if (Mat.col == 1)   return Mat;
-    Matrix Mat_V = MatrixAssignment(Mat.row * Mat.col, 1);
-    for (int i = 0;i < Mat_V.row*Mat_V.col;i++) {
-        Mat_V.a[i] = Mat.a[i];
-    }
-    return Mat_V;
-}
-
-Matrix VecLink(const std::initializer_list<Matrix> &Mat) {
-    int row = 0;
-    for (auto Vec : Mat) {
-        if (Vec.col != 1) return 0;
-        row += Vec.row;
-    }
-    Matrix Mat_output = MatrixAssignment(row, 1);
-    int cnt1 = -1;  int cnt2 = -1;
-    for (auto Vec : Mat) {
-        Iter (Vec) Mat_output.a[++cnt1] = Vec.a[++cnt2];
-        cnt2 = -1;
-    }
-    return Mat_output;
-}
-
-Matrix MatMerge(const std::initializer_list<Matrix> &Mat) {
-    int row = Mat.begin()->row; int col = 0;
-    for (auto Mat_tmp : Mat) col += Mat_tmp.col;
-    Matrix Mat_output = MatrixAssignment(row, col);
-    int cnt1 = -1;  int cnt2 = -1;
-    for (auto Vec : Mat) {
-        if (Vec.row != row) return 0;
-        Iter (Vec) Mat_output.a[++cnt1] = Vec.a[++cnt2];
-        cnt2 = -1;
-    } 
-    return Mat_output;    
-}
-
 double min_row(const Matrix &Mat, const int n) {
     double tmp = Mat(n, 0);
     for(int i = 0;i < Mat.col;i++)  tmp = std::min(tmp, Mat(n, i));
@@ -338,10 +315,10 @@ double max_row(const Matrix &Mat, const int n) {
 }
 
 
-Matrix Normalize_ZScore(const Matrix &Mat_ori) {
+Matrix Normalize_ZScore(const Matrix &Mat_sample, const Matrix &Mat_ori) {
     Matrix Mat_nor = MatrixAssignment(Mat_ori.row, Mat_ori.col);
-    double mean = ave(Mat_ori);
-    double variance = var(Mat_ori);
+    double mean = ave(Mat_sample);
+    double variance = var(Mat_sample);
     Iter(Mat_nor) Mat_nor(i, j) = (Mat_ori(i, j) - mean) / variance;
     return Mat_nor;
 }
@@ -354,9 +331,9 @@ Matrix Restore_ZScore(const Matrix &Mat_sample, const Matrix &Mat_ori) {
     return Mat_nor;
 }
 
-Matrix Normalize_MinMax(const Matrix &Mat_ori) {
+Matrix Normalize_MinMax(const Matrix &Mat_sample, const Matrix &Mat_ori) {
     double Min, Max; Min = Max = Mat_ori(0, 0);
-    Iter(Mat_ori) {
+    Iter(Mat_sample) {
         Min = std::min(Min, Mat_ori(i, j));
         Max = std::max(Max, Mat_ori(i, j));
     }
