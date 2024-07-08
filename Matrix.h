@@ -6,9 +6,9 @@
 #include <random>
 #define Iter(Mat) for (int i = 0;i < Mat.row;i++) for (int j = 0;j < Mat.col;j++)
 
-std::mt19937 random(time(0));
+std::mt19937 Random(time(0));
 double RandomTheta(double l, double r){
-    return l + (r - l) * random() / (INT_MAX * 2.0);
+    return l + (r - l) * Random() / (INT_MAX * 2.0);
 }
 
 struct Matrix {
@@ -59,14 +59,15 @@ struct Matrix {
     }
 };
 
-void disp(const Matrix &Mat) {
+void disp(const Matrix &Mat, bool newline = true) {
     for (int i = 0;i < Mat.row;i++) {
-        for (int j = 0;j < Mat.col;j++) {
+        for (int j = 0;j < Mat.col-1;j++) {
             std::cout << Mat(i, j) << " ";
         }
-        std::cout << std::endl;
+        std::cout << Mat(i, Mat.col-1);
+        if (Mat.row - 1) std::cout << std::endl;
     }
-    std::cout << std::endl;
+    if (newline) std::cout << std::endl;
 }
 
 Matrix MatrixAssignment(int x, int y, double l, double r) {
@@ -315,37 +316,37 @@ double max_row(const Matrix &Mat, const int n) {
 }
 
 
-Matrix Normalize_ZScore(const Matrix &Mat_sample, const Matrix &Mat_ori) {
-    Matrix Mat_nor = MatrixAssignment(Mat_ori.row, Mat_ori.col);
+Matrix Normalize_ZScore(const Matrix &Mat_sample) {
+    Matrix Mat_nor = MatrixAssignment(Mat_sample.row, Mat_sample.col);
     double mean = ave(Mat_sample);
     double variance = var(Mat_sample);
-    Iter(Mat_nor) Mat_nor(i, j) = (Mat_ori(i, j) - mean) / variance;
+    Iter(Mat_nor) Mat_nor(i, j) = (Mat_sample(i, j) - mean) / variance;
     return Mat_nor;
 }
 
-Matrix Restore_ZScore(const Matrix &Mat_sample, const Matrix &Mat_ori) {
-    Matrix Mat_nor = MatrixAssignment(Mat_ori.row, Mat_ori.col);
-    double mean = ave(Mat_sample);
-    double variance = var(Mat_sample);
-    Iter(Mat_nor) Mat_nor(i, j) = Mat_ori(i, j) * variance + mean;
-    return Mat_nor;
+Matrix Restore_ZScore(const Matrix &Mat_nor, const Matrix &Mat_Ori) {
+    Matrix Mat = MatrixAssignment(Mat_nor.row, Mat_nor.col);
+    double mean = ave(Mat_Ori);
+    double variance = var(Mat_Ori);
+    Iter(Mat) Mat(i, j) = Mat_nor(i, j) * variance + mean;
+    return Mat;
 }
 
-Matrix Normalize_MinMax(const Matrix &Mat_sample, const Matrix &Mat_ori) {
-    double Min, Max; Min = Max = Mat_ori(0, 0);
-    Iter(Mat_sample) {
-        Min = std::min(Min, Mat_ori(i, j));
-        Max = std::max(Max, Mat_ori(i, j));
-    }
-    return 1 / (Max - Min) % (Mat_ori - Min);
-}
-
-Matrix Restore_MinMax(const Matrix &Mat_sample, const Matrix &Mat_ori) {
+Matrix Normalize_MinMax(const Matrix &Mat_sample) {
     double Min, Max; Min = Max = Mat_sample(0, 0);
     Iter(Mat_sample) {
         Min = std::min(Min, Mat_sample(i, j));
         Max = std::max(Max, Mat_sample(i, j));
     }
-    return (Max - Min) % Mat_ori + Min;
+    return 1 / (Max - Min) % (Mat_sample - Min);
+}
+
+Matrix Restore_MinMax(const Matrix &Mat_nor, const Matrix &Mat_Ori) {
+    double Min, Max; Min = Max = Mat_Ori(0, 0);
+    Iter(Mat_Ori) {
+        Min = std::min(Min, Mat_Ori(i, j));
+        Max = std::max(Max, Mat_Ori(i, j));
+    }
+    return Mat_nor % (Max - Min) + Min;
 }
 /*--------------------------------------------------------*/
